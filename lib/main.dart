@@ -1,5 +1,5 @@
 import 'dart:io';
-
+import 'dart:math';
 import 'package:flutter/material.dart';
 import 'package:flutter/rendering.dart';
 import 'settings.dart';
@@ -101,6 +101,15 @@ class _MyHomePageState extends State<MyHomePage> {
     super.dispose();
   }
 
+  void _randomPlay() {
+    if (_recordList.length > 0) {
+      var rnd = new Random();
+      var idx = rnd.nextInt(_recordList.length);
+      var item = _recordList[idx];
+      OpenAppFile.open(item.path);
+    }
+  }
+
   void _scrollListener() {
     if (scrollController.position.extentAfter < 500) {}
   }
@@ -178,7 +187,11 @@ class _MyHomePageState extends State<MyHomePage> {
       appBar: AppBar(
         actions: [
           Text("Item count: " + _recordList.length.toString()),
-          IconButton(onPressed: () {}, icon: Icon(Icons.play_circle)),
+          IconButton(
+              onPressed: () {
+                _randomPlay();
+              },
+              icon: Icon(Icons.play_circle)),
           Padding(
             padding: EdgeInsets.all(5),
             child: SearchBar(

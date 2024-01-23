@@ -48,7 +48,34 @@ const RecordSchema = CollectionSchema(
   deserialize: _recordDeserialize,
   deserializeProp: _recordDeserializeProp,
   idName: r'id',
-  indexes: {},
+  indexes: {
+    r'name': IndexSchema(
+      id: 879695947855722453,
+      name: r'name',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'name',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    ),
+    r'path': IndexSchema(
+      id: 8756705481922369689,
+      name: r'path',
+      unique: true,
+      replace: true,
+      properties: [
+        IndexPropertySchema(
+          name: r'path',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    )
+  },
   links: {},
   embeddedSchemas: {},
   getId: _recordGetId,
@@ -132,6 +159,60 @@ void _recordAttach(IsarCollection<dynamic> col, Id id, Record object) {
   object.id = id;
 }
 
+extension RecordByIndex on IsarCollection<Record> {
+  Future<Record?> getByPath(String path) {
+    return getByIndex(r'path', [path]);
+  }
+
+  Record? getByPathSync(String path) {
+    return getByIndexSync(r'path', [path]);
+  }
+
+  Future<bool> deleteByPath(String path) {
+    return deleteByIndex(r'path', [path]);
+  }
+
+  bool deleteByPathSync(String path) {
+    return deleteByIndexSync(r'path', [path]);
+  }
+
+  Future<List<Record?>> getAllByPath(List<String> pathValues) {
+    final values = pathValues.map((e) => [e]).toList();
+    return getAllByIndex(r'path', values);
+  }
+
+  List<Record?> getAllByPathSync(List<String> pathValues) {
+    final values = pathValues.map((e) => [e]).toList();
+    return getAllByIndexSync(r'path', values);
+  }
+
+  Future<int> deleteAllByPath(List<String> pathValues) {
+    final values = pathValues.map((e) => [e]).toList();
+    return deleteAllByIndex(r'path', values);
+  }
+
+  int deleteAllByPathSync(List<String> pathValues) {
+    final values = pathValues.map((e) => [e]).toList();
+    return deleteAllByIndexSync(r'path', values);
+  }
+
+  Future<Id> putByPath(Record object) {
+    return putByIndex(r'path', object);
+  }
+
+  Id putByPathSync(Record object, {bool saveLinks = true}) {
+    return putByIndexSync(r'path', object, saveLinks: saveLinks);
+  }
+
+  Future<List<Id>> putAllByPath(List<Record> objects) {
+    return putAllByIndex(r'path', objects);
+  }
+
+  List<Id> putAllByPathSync(List<Record> objects, {bool saveLinks = true}) {
+    return putAllByIndexSync(r'path', objects, saveLinks: saveLinks);
+  }
+}
+
 extension RecordQueryWhereSort on QueryBuilder<Record, Record, QWhere> {
   QueryBuilder<Record, Record, QAfterWhere> anyId() {
     return QueryBuilder.apply(this, (query) {
@@ -203,6 +284,92 @@ extension RecordQueryWhere on QueryBuilder<Record, Record, QWhereClause> {
         upper: upperId,
         includeUpper: includeUpper,
       ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterWhereClause> nameEqualTo(String name) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'name',
+        value: [name],
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterWhereClause> nameNotEqualTo(String name) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'name',
+              lower: [],
+              upper: [name],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'name',
+              lower: [name],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'name',
+              lower: [name],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'name',
+              lower: [],
+              upper: [name],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterWhereClause> pathEqualTo(String path) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'path',
+        value: [path],
+      ));
+    });
+  }
+
+  QueryBuilder<Record, Record, QAfterWhereClause> pathNotEqualTo(String path) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'path',
+              lower: [],
+              upper: [path],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'path',
+              lower: [path],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'path',
+              lower: [path],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'path',
+              lower: [],
+              upper: [path],
+              includeUpper: false,
+            ));
+      }
     });
   }
 }
@@ -993,14 +1160,7 @@ const ConfigurationsSchema = CollectionSchema(
   deserializeProp: _configurationsDeserializeProp,
   idName: r'id',
   indexes: {},
-  links: {
-    r'records': LinkSchema(
-      id: 5185234040750624212,
-      name: r'records',
-      target: r'Record',
-      single: false,
-    )
-  },
+  links: {},
   embeddedSchemas: {},
   getId: _configurationsGetId,
   getLinks: _configurationsGetLinks,
@@ -1069,13 +1229,12 @@ Id _configurationsGetId(Configurations object) {
 }
 
 List<IsarLinkBase<dynamic>> _configurationsGetLinks(Configurations object) {
-  return [object.records];
+  return [];
 }
 
 void _configurationsAttach(
     IsarCollection<dynamic> col, Id id, Configurations object) {
   object.id = id;
-  object.records.attach(col, col.isar.collection<Record>(), r'records', id);
 }
 
 extension ConfigurationsQueryWhereSort
@@ -1582,68 +1741,7 @@ extension ConfigurationsQueryObject
     on QueryBuilder<Configurations, Configurations, QFilterCondition> {}
 
 extension ConfigurationsQueryLinks
-    on QueryBuilder<Configurations, Configurations, QFilterCondition> {
-  QueryBuilder<Configurations, Configurations, QAfterFilterCondition> records(
-      FilterQuery<Record> q) {
-    return QueryBuilder.apply(this, (query) {
-      return query.link(q, r'records');
-    });
-  }
-
-  QueryBuilder<Configurations, Configurations, QAfterFilterCondition>
-      recordsLengthEqualTo(int length) {
-    return QueryBuilder.apply(this, (query) {
-      return query.linkLength(r'records', length, true, length, true);
-    });
-  }
-
-  QueryBuilder<Configurations, Configurations, QAfterFilterCondition>
-      recordsIsEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.linkLength(r'records', 0, true, 0, true);
-    });
-  }
-
-  QueryBuilder<Configurations, Configurations, QAfterFilterCondition>
-      recordsIsNotEmpty() {
-    return QueryBuilder.apply(this, (query) {
-      return query.linkLength(r'records', 0, false, 999999, true);
-    });
-  }
-
-  QueryBuilder<Configurations, Configurations, QAfterFilterCondition>
-      recordsLengthLessThan(
-    int length, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.linkLength(r'records', 0, true, length, include);
-    });
-  }
-
-  QueryBuilder<Configurations, Configurations, QAfterFilterCondition>
-      recordsLengthGreaterThan(
-    int length, {
-    bool include = false,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.linkLength(r'records', length, include, 999999, true);
-    });
-  }
-
-  QueryBuilder<Configurations, Configurations, QAfterFilterCondition>
-      recordsLengthBetween(
-    int lower,
-    int upper, {
-    bool includeLower = true,
-    bool includeUpper = true,
-  }) {
-    return QueryBuilder.apply(this, (query) {
-      return query.linkLength(
-          r'records', lower, includeLower, upper, includeUpper);
-    });
-  }
-}
+    on QueryBuilder<Configurations, Configurations, QFilterCondition> {}
 
 extension ConfigurationsQuerySortBy
     on QueryBuilder<Configurations, Configurations, QSortBy> {

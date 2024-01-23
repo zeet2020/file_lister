@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'dart:async';
+import 'dart:isolate';
 import 'package:async/async.dart';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -60,11 +61,10 @@ class _SettingPage extends State<SettingPage> {
   void _subscribeFileExt() {
     setState(() {
       activeConfiguration.file_ext = _fileExtController.text;
-      IsarRef.writeTxnSync((){
-          IsarRef.configurations.putSync(activeConfiguration);
+      IsarRef.writeTxnSync(() {
+        IsarRef.configurations.putSync(activeConfiguration);
       });
     });
-
   }
 
   @override
@@ -82,12 +82,14 @@ class _SettingPage extends State<SettingPage> {
   }
 
   // scan logic
-  void _scanDirectory(List<String> DirList, Isar db, String extType) {
+  _scanDirectory(List<String> DirList, Isar db, String extType) {
     List<Stream> completeList = [];
 
     for (var i = 0; i < DirList.length; i++) {
       var dir = Directory(DirList[i]);
+
       var dirSub = dir.list(recursive: true, followLinks: false);
+
       completeList.add(dirSub);
     }
     var mergedStream = StreamGroup.merge(completeList);
@@ -102,6 +104,7 @@ class _SettingPage extends State<SettingPage> {
       });
       sub.cancel();
     });
+    return sub;
   }
 
   void _storeEntity(fileEntity) {
@@ -124,12 +127,25 @@ class _SettingPage extends State<SettingPage> {
     }
   }
 
-  void _startScaning() {
-    _scanDirectory(
-      activeConfiguration.scan_path,
-      IsarRef,
-      activeConfiguration.file_ext,
-    );
+  Future _startScaning(context) async {
+    return Future(() {
+      return _scanDirectory(
+        activeConfiguration.scan_path,
+        IsarRef,
+        activeConfiguration.file_ext,
+      );
+    }).onError((error, stackTrace){
+      final snackBar = SnackBar(
+        content: const Text("Error occured while scanning"),
+        action: SnackBarAction(
+          label: 'Close',
+          onPressed: () {
+            // Some code to undo the change.
+          },
+        ),
+      );
+      ScaffoldMessenger.of(context).showSnackBar(snackBar);
+    });
   }
 
   _toggleFileExt() {
@@ -166,12 +182,7 @@ class _SettingPage extends State<SettingPage> {
         !_isScanInProgress);
   }
 
-  _startScanButtonhandler() {
-    _startScaning();
-    setState(() {
-      _isScanInProgress = true;
-    });
-  }
+
 
   @override
   Widget build(BuildContext context) {
@@ -288,7 +299,12 @@ class _SettingPage extends State<SettingPage> {
                                           borderRadius:
                                               BorderRadius.circular(0.0)))),
                               onPressed: _enableStartScan()
-                                  ? _startScanButtonhandler
+                                  ? () {
+                                     _startScaning(context);
+                                   setState(() {
+                                      _isScanInProgress = true;
+                                   });
+                                  }
                                   : null,
                               child: _isScanInProgress
                                   ? new CircularProgressIndicator()
